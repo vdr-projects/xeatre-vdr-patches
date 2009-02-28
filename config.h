@@ -267,6 +267,7 @@ public:
   int InitialChannel;
   int InitialVolume;
   int EmergencyExit;
+  int RecorderBufSize;
   int __EndData__;
   cSetup(void);
   cSetup& operator= (const cSetup &s);

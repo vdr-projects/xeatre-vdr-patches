@@ -289,6 +289,7 @@ cSetup::cSetup(void)
   InitialChannel = 0;
   InitialVolume = -1;
   EmergencyExit = 1;
+  RecorderBufSize = 100;
 }
 
 cSetup& cSetup::operator= (const cSetup &s)
@@ -462,6 +463,7 @@ bool cSetup::Parse(const char *Name, const char *Value)
   else if (!strcasecmp(Name, "InitialChannel"))      InitialChannel     = atoi(Value);
   else if (!strcasecmp(Name, "InitialVolume"))       InitialVolume      = atoi(Value);
   else if (!strcasecmp(Name, "EmergencyExit"))       EmergencyExit      = atoi(Value);
+  else if (!strcasecmp(Name, "RecorderBufSize"))     RecorderBufSize    = atoi(Value);
   else
      return false;
   return true;
@@ -545,6 +547,7 @@ bool cSetup::Save(void)
   Store("InitialChannel",     InitialChannel);
   Store("InitialVolume",      InitialVolume);
   Store("EmergencyExit",      EmergencyExit);
+  Store("RecorderBufSize",    RecorderBufSize);
 
   Sort();
 

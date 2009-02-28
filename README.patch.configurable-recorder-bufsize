@@ -1,0 +1,14 @@
+DESCRIPTION
+-----------
+
+This as the "Configurable Recorder Bufsize" patch for VDR as used by Xeatre.TV.
+
+It allows to increase the size of the recording buffer.
+This might be required because *TODO*
+
+
+HISTORY
+-------
+
+2009-02-28
+  - initial public release

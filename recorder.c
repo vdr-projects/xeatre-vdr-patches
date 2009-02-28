@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include "shutdown.h"
 
-#define RECORDERBUFSIZE  MEGABYTE(5)
+#define RECORDERBUFSIZE  MEGABYTE(Setup.RecorderBufSize)
 
 // The maximum time we wait before assuming that a recorded video data stream
 // is broken:
@@ -135,6 +135,8 @@ cRecorder::cRecorder(const char *FileName, tChannelID ChannelID, int Priority, i
   SpinUpDisk(FileName);
 
   ringBuffer = new cRingBufferLinear(RECORDERBUFSIZE, TS_SIZE * 2, true, "Recorder");
+  dsyslog("RECORDERBUFSIZE: %d\n", RECORDERBUFSIZE);
+
   ringBuffer->SetTimeouts(0, 100);
   remux = new cRemux(VPid, APids, Setup.UseDolbyDigital ? DPids : NULL, SPids, true);
   writer = new cFileWriter(FileName, remux);
