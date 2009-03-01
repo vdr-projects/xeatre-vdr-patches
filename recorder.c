@@ -30,7 +30,7 @@ private:
   cFileName *fileName;
   cIndexFile *index;
   uchar pictureType;
-  int fileSize;
+  off_t fileSize;
   cUnbufferedFile *recordFile;
   time_t lastDiskSpaceCheck;
   bool RunningLowOnDiskSpace(void);

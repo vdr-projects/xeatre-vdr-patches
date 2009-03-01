@@ -112,6 +112,80 @@ eOSState cMenuEditIntItem::ProcessKey(eKeys Key)
   return state;
 }
 
+// --- cMenuEditInt64Item ------------------------------------------------------
+
+cMenuEditInt64Item::cMenuEditInt64Item(const char *Name, int64_t *Value, int64_t Min, int64_t Max, const char *MinString, const char *MaxString)
+:cMenuEditItem(Name)
+{
+  value = Value;
+  min = Min;
+  max = Max;
+  minString = MinString;
+  maxString = MaxString;
+  if (*value < min)
+     *value = min;
+  else if (*value > max)
+     *value = max;
+  Set();
+}
+
+void cMenuEditInt64Item::Set(void)
+{
+  if (minString && *value == min)
+     SetValue(minString);
+  else if (maxString && *value == max)
+     SetValue(maxString);
+  else {
+     char buf[32];
+     snprintf(buf, sizeof(buf), "%lld", *value);
+     SetValue(buf);
+     }
+}
+
+eOSState cMenuEditInt64Item::ProcessKey(eKeys Key)
+{
+  eOSState state = cMenuEditItem::ProcessKey(Key);
+
+  if (state == osUnknown) {
+     int64_t newValue = *value;
+     bool IsRepeat = Key & k_Repeat;
+     Key = NORMALKEY(Key);
+     switch (Key) {
+       case kNone: break;
+       case k0 ... k9:
+            if (fresh) {
+               newValue = 0;
+               fresh = false;
+               }
+            newValue = newValue * 10 + (Key - k0);
+            break;
+       case kLeft: // TODO might want to increase the delta if repeated quickly?
+            newValue = *value - 1;
+            fresh = true;
+            if (!IsRepeat && newValue < min && max != 9223372036854775807LL)
+               newValue = max;
+            break;
+       case kRight:
+            newValue = *value + 1;
+            fresh = true;
+            if (!IsRepeat && newValue > max && min != -9223372036854775807LL - 1)
+               newValue = min;
+            break;
+       default:
+            if (*value < min) { *value = min; Set(); }
+            if (*value > max) { *value = max; Set(); }
+            return state;
+       }
+     if (newValue != *value && (!fresh || min <= newValue) && newValue <= max) {
+        *value = newValue;
+        Set();
+        }
+     state = osContinue;
+     }
+  return state;
+}
+
+
 // --- cMenuEditBoolItem -----------------------------------------------------
 
 cMenuEditBoolItem::cMenuEditBoolItem(const char *Name, int *Value, const char *FalseString, const char *TrueString)

@@ -1,0 +1,17 @@
+DESCRIPTION
+-----------
+
+This patch extends the maximum possible video file size by using the "reserved"
+field in the index as extension to the offset.
+
+AUTHOR
+------
+
+Andreas Pickart <apickart@opensourcefactory.com>
+
+
+HISTORY
+-------
+
+2009-03-01
+  - initial public release

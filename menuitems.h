@@ -10,6 +10,7 @@
 #ifndef __MENUITEMS_H
 #define __MENUITEMS_H
 
+#include <stdint.h>
 #include <limits.h>
 #include "osdbase.h"
 
@@ -32,6 +33,17 @@ protected:
   virtual void Set(void);
 public:
   cMenuEditIntItem(const char *Name, int *Value, int Min = 0, int Max = INT_MAX, const char *MinString = NULL, const char *MaxString = NULL);
+  virtual eOSState ProcessKey(eKeys Key);
+  };
+
+class cMenuEditInt64Item : public cMenuEditItem {
+protected:
+  int64_t *value;
+  int64_t min, max;
+  const char *minString, *maxString;
+  virtual void Set(void);
+public:
+  cMenuEditInt64Item(const char *Name, int64_t *Value, int64_t Min = 0, int64_t Max = 9223372036854775807LL, const char *MinString = NULL, const char *MaxString = NULL);
   virtual eOSState ProcessKey(eKeys Key);
   };
 

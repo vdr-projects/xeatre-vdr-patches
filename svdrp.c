@@ -1476,9 +1476,9 @@ void cSVDRP::CmdSTAT(const char *Option)
 {
   if (*Option) {
      if (strcasecmp(Option, "DISK") == 0) {
-        int FreeMB, UsedMB;
+        int64_t FreeMB, UsedMB;
         int Percent = VideoDiskSpace(&FreeMB, &UsedMB);
-        Reply(250, "%dMB %dMB %d%%", FreeMB + UsedMB, FreeMB, Percent);
+        Reply(250, "%lldMB %lldMB %d%%", FreeMB + UsedMB, FreeMB, Percent);
         }
      else
         Reply(501, "Invalid Option \"%s\"", Option);

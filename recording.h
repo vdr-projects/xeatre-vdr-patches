@@ -70,7 +70,7 @@ private:
   mutable char *sortBuffer;
   mutable char *fileName;
   mutable char *name;
-  mutable int fileSizeMB;
+  mutable int64_t fileSizeMB;
   cRecordingInfo *info;
   cRecording(const cRecording&); // can't copy cRecording
   cRecording &operator=(const cRecording &); // can't assign cRecording
@@ -143,7 +143,7 @@ public:
   cRecording *GetByName(const char *FileName);
   void AddByName(const char *FileName, bool TriggerUpdate = true);
   void DelByName(const char *FileName);
-  int TotalFileSizeMB(void); ///< Only for deleted recordings!
+  int64_t TotalFileSizeMB(void); ///< Only for deleted recordings!
   };
 
 extern cRecordings Recordings;
@@ -188,18 +188,17 @@ public:
 // The maximum size of a single frame (up to HDTV 1920x1080):
 #define MAXFRAMESIZE  KILOBYTE(512)
 
+
 // The maximum file size is limited by the range that can be covered
-// with 'int'. 4GB might be possible (if the range is considered
-// 'unsigned'), 2GB should be possible (even if the range is considered
-// 'signed'), so let's use 2000MB for absolute safety (the actual file size
-// may be slightly higher because we stop recording only before the next
-// 'I' frame, to have a complete Group Of Pictures):
-#define MAXVIDEOFILESIZE 2000 // MB
-#define MINVIDEOFILESIZE  100 // MB
+// with 32+16 bits unsigned. Let's use somewhat less for absolute safety
+// (the actual file size may be slightly higher because we stop recording
+// only before the next 'I' frame, to have a complete Group Of Pictures):
+#define MAXVIDEOFILESIZE 274877906000ULL // MB
+#define MINVIDEOFILESIZE 100 // MB
 
 class cIndexFile {
 private:
-  struct tIndex { int offset; uchar type; uchar number; short reserved; };
+  struct tIndex { uint32_t offset_lo; uchar type; uchar number; uint16_t offset_hi; }; 
   int f;
   char *fileName;
   int size, last;
@@ -211,10 +210,10 @@ public:
   cIndexFile(const char *FileName, bool Record);
   ~cIndexFile();
   bool Ok(void) { return index != NULL; }
-  bool Write(uchar PictureType, uchar FileNumber, int FileOffset);
-  bool Get(int Index, uchar *FileNumber, int *FileOffset, uchar *PictureType = NULL, int *Length = NULL);
-  int GetNextIFrame(int Index, bool Forward, uchar *FileNumber = NULL, int *FileOffset = NULL, int *Length = NULL, bool StayOffEnd = false);
-  int Get(uchar FileNumber, int FileOffset);
+  bool Write(uchar PictureType, uchar FileNumber, off_t FileOffset);
+  bool Get(int Index, uchar *FileNumber, off_t *FileOffset, uchar *PictureType = NULL, int *Length = NULL);
+  int GetNextIFrame(int Index, bool Forward, uchar *FileNumber = NULL, off_t *FileOffset = NULL, int *Length = NULL, bool StayOffEnd = false);
+  int Get(uchar FileNumber, off_t FileOffset);
   int Last(void) { CatchUp(); return last; }
   int GetResume(void) { return resumeFile.Read(); }
   bool StoreResume(int Index) { return resumeFile.Save(Index); }
@@ -235,7 +234,7 @@ public:
   int Number(void) { return fileNumber; }
   cUnbufferedFile *Open(void);
   void Close(void);
-  cUnbufferedFile *SetOffset(int Number, int Offset = 0);
+  cUnbufferedFile *SetOffset(int Number, off_t Offset = 0);
   cUnbufferedFile *NextFile(void);
   };
 

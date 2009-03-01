@@ -324,6 +324,11 @@ void cSetup::Store(const char *Name, int Value, const char *Plugin)
   Store(Name, cString::sprintf("%d", Value), Plugin);
 }
 
+void cSetup::Store(const char *Name, int64_t Value, const char *Plugin)
+{
+  Store(Name, cString::sprintf("%lld", Value), Plugin);
+}
+
 bool cSetup::Load(const char *FileName)
 {
   if (cConfig<cSetupLine>::Load(FileName, true)) {
@@ -448,7 +453,7 @@ bool cSetup::Parse(const char *Name, const char *Value)
   else if (!strcasecmp(Name, "FontOsdSize"))         FontOsdSize        = atoi(Value);
   else if (!strcasecmp(Name, "FontSmlSize"))         FontSmlSize        = atoi(Value);
   else if (!strcasecmp(Name, "FontFixSize"))         FontFixSize        = atoi(Value);
-  else if (!strcasecmp(Name, "MaxVideoFileSize"))    MaxVideoFileSize   = atoi(Value);
+  else if (!strcasecmp(Name, "MaxVideoFileSize"))    MaxVideoFileSize   = atoll(Value);
   else if (!strcasecmp(Name, "SplitEditedFiles"))    SplitEditedFiles   = atoi(Value);
   else if (!strcasecmp(Name, "MinEventTimeout"))     MinEventTimeout    = atoi(Value);
   else if (!strcasecmp(Name, "MinUserInactivity"))   MinUserInactivity  = atoi(Value);
@@ -535,7 +540,7 @@ bool cSetup::Save(void)
   Store("SplitEditedFiles",   SplitEditedFiles);
   Store("MinEventTimeout",    MinEventTimeout);
   Store("MinUserInactivity",  MinUserInactivity);
-  Store("NextWakeupTime",     NextWakeupTime);
+  Store("NextWakeupTime",     (int64_t)NextWakeupTime);
   Store("MultiSpeedMode",     MultiSpeedMode);
   Store("ShowReplayMode",     ShowReplayMode);
   Store("ResumeID",           ResumeID);

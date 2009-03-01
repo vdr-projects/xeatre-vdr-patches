@@ -206,7 +206,7 @@ private:
   cFrame *playFrame;
   void TrickSpeed(int Increment);
   void Empty(void);
-  bool NextFile(uchar FileNumber = 0, int FileOffset = -1);
+  bool NextFile(uchar FileNumber = 0, off_t FileOffset = -1);
   int Resume(void);
   bool Save(void);
 protected:
@@ -312,7 +312,7 @@ void cDvbPlayer::Empty(void)
   firstPacket = true;
 }
 
-bool cDvbPlayer::NextFile(uchar FileNumber, int FileOffset)
+bool cDvbPlayer::NextFile(uchar FileNumber, off_t FileOffset)
 {
   if (FileNumber > 0)
      replayFile = fileName->SetOffset(FileNumber, FileOffset);
@@ -328,7 +328,7 @@ int cDvbPlayer::Resume(void)
      int Index = index->GetResume();
      if (Index >= 0) {
         uchar FileNumber;
-        int FileOffset;
+        off_t FileOffset;
         if (index->Get(Index, &FileNumber, &FileOffset) && NextFile(FileNumber, FileOffset))
            return Index;
         }
@@ -398,7 +398,7 @@ void cDvbPlayer::Action(void)
                  if (!nonBlockingFileReader->Reading()) {
                     if (playMode == pmFast || (playMode == pmSlow && playDir == pdBackward)) {
                        uchar FileNumber;
-                       int FileOffset;
+                       off_t FileOffset;
                        bool TimeShiftMode = index->IsStillRecording();
                        int Index = -1;
                        if (DeviceHasIBPTrickSpeed() && playDir == pdForward) {
@@ -436,7 +436,7 @@ void cDvbPlayer::Action(void)
                        }
                     else if (index) {
                        uchar FileNumber;
-                       int FileOffset;
+                       off_t FileOffset;
                        readIndex++;
                        if (!(index->Get(readIndex, &FileNumber, &FileOffset, NULL, &Length) && NextFile(FileNumber, FileOffset))) {
                           readIndex = -1;
@@ -696,7 +696,8 @@ void cDvbPlayer::Goto(int Index, bool Still)
      if (++Index <= 0)
         Index = 1; // not '0', to allow GetNextIFrame() below to work!
      uchar FileNumber;
-     int FileOffset, Length;
+     off_t FileOffset;
+     int Length;
      Index = index->GetNextIFrame(Index, false, &FileNumber, &FileOffset, &Length);
      if (Index >= 0 && NextFile(FileNumber, FileOffset) && Still) {
         uchar b[MAXFRAMESIZE + 4 + 5 + 4];

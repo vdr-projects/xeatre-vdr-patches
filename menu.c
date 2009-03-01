@@ -54,7 +54,7 @@
 class cFreeDiskSpace {
 private:
   static time_t lastDiskSpaceCheck;
-  static int lastFreeMB;
+  static int64_t lastFreeMB;
   static cString freeDiskSpaceString;
 public:
   static bool HasChanged(bool ForceCheck = false);
@@ -62,7 +62,7 @@ public:
   };
 
 time_t cFreeDiskSpace::lastDiskSpaceCheck = 0;
-int cFreeDiskSpace::lastFreeMB = 0;
+int64_t cFreeDiskSpace::lastFreeMB = 0;
 cString cFreeDiskSpace::freeDiskSpaceString;
 
 cFreeDiskSpace FreeDiskSpace;
@@ -70,7 +70,7 @@ cFreeDiskSpace FreeDiskSpace;
 bool cFreeDiskSpace::HasChanged(bool ForceCheck)
 {
   if (ForceCheck || time(NULL) - lastDiskSpaceCheck > DISKSPACECHEK) {
-     int FreeMB;
+     int64_t FreeMB;
      int Percent = VideoDiskSpace(&FreeMB);
      lastDiskSpaceCheck = time(NULL);
      if (ForceCheck || FreeMB != lastFreeMB) {
@@ -2756,7 +2756,7 @@ cMenuSetupRecord::cMenuSetupRecord(void)
   Add(new cMenuEditBoolItem(tr("Setup.Recording$Mark instant recording"),    &data.MarkInstantRecord));
   Add(new cMenuEditStrItem( tr("Setup.Recording$Name instant recording"),     data.NameInstantRecord, sizeof(data.NameInstantRecord)));
   Add(new cMenuEditIntItem( tr("Setup.Recording$Instant rec. time (min)"),   &data.InstantRecordTime, 1, MAXINSTANTRECTIME));
-  Add(new cMenuEditIntItem( tr("Setup.Recording$Max. video file size (MB)"), &data.MaxVideoFileSize, MINVIDEOFILESIZE, MAXVIDEOFILESIZE));
+  Add(new cMenuEditInt64Item(tr("Setup.Recording$Max. video file size (MB)"), &data.MaxVideoFileSize, MINVIDEOFILESIZE, MAXVIDEOFILESIZE));
   Add(new cMenuEditBoolItem(tr("Setup.Recording$Split edited files"),        &data.SplitEditedFiles));
 }
 
@@ -3896,7 +3896,7 @@ int cRecordControls::state = 0;
 bool cRecordControls::Start(cTimer *Timer, bool Pause)
 {
   static time_t LastNoDiskSpaceMessage = 0;
-  int FreeMB = 0;
+  int64_t FreeMB = 0;
   if (Timer) {
      AssertFreeDiskSpace(Timer->Priority(), !Timer->Pending());
      Timer->SetPending(true);

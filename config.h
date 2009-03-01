@@ -196,6 +196,7 @@ private:
   cSetupLine *Get(const char *Name, const char *Plugin = NULL);
   void Store(const char *Name, const char *Value, const char *Plugin = NULL, bool AllowMultiple = false);
   void Store(const char *Name, int Value, const char *Plugin = NULL);
+  void Store(const char *Name, int64_t Value, const char *Plugin = NULL);
 public:
   // Also adjust cMenuSetup (menu.c) when adding parameters here!
   int __BeginData__;
@@ -254,7 +255,7 @@ public:
   int FontOsdSize;
   int FontSmlSize;
   int FontFixSize;
-  int MaxVideoFileSize;
+  int64_t MaxVideoFileSize;
   int SplitEditedFiles;
   int MinEventTimeout, MinUserInactivity;
   time_t NextWakeupTime;

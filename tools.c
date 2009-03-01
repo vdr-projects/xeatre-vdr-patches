@@ -292,17 +292,17 @@ bool EntriesOnSameFileSystem(const char *File1, const char *File2)
   return false;
 }
 
-int FreeDiskSpaceMB(const char *Directory, int *UsedMB)
+int64_t FreeDiskSpaceMB(const char *Directory, int64_t *UsedMB)
 {
   if (UsedMB)
      *UsedMB = 0;
-  int Free = 0;
+  int64_t Free = 0;
   struct statfs statFs;
   if (statfs(Directory, &statFs) == 0) {
      double blocksPerMeg = 1024.0 * 1024.0 / statFs.f_bsize;
      if (UsedMB)
-        *UsedMB = int((statFs.f_blocks - statFs.f_bfree) / blocksPerMeg);
-     Free = int(statFs.f_bavail / blocksPerMeg);
+        *UsedMB = int64_t((statFs.f_blocks - statFs.f_bfree) / blocksPerMeg);
+     Free = int64_t(statFs.f_bavail / blocksPerMeg);
      }
   else
      LOG_ERROR_STR(Directory);
@@ -446,11 +446,11 @@ bool RemoveEmptyDirectories(const char *DirName, bool RemoveThis)
   return false;
 }
 
-int DirSizeMB(const char *DirName)
+int64_t DirSizeMB(const char *DirName)
 {
   cReadDir d(DirName);
   if (d.Ok()) {
-     int size = 0;
+     int64_t size = 0;
      struct dirent *e;
      while (size >= 0 && (e = d.Next()) != NULL) {
            if (strcmp(e->d_name, ".") && strcmp(e->d_name, "..")) {
@@ -458,7 +458,7 @@ int DirSizeMB(const char *DirName)
               struct stat st;
               if (stat(buffer, &st) == 0) {
                  if (S_ISDIR(st.st_mode)) {
-                    int n = DirSizeMB(buffer);
+                    off_t n = DirSizeMB(buffer);
                     if (n >= 0)
                        size += n;
                     else
@@ -1589,7 +1589,7 @@ ssize_t cUnbufferedFile::Write(const void *Data, size_t Size)
               //    last (partial) page might be skipped, writeback will start only after
               //    second call; the third call will still include this page and finally
               //    drop it from cache.
-              off_t headdrop = min(begin, WRITE_BUFFER * 2L);
+              off_t headdrop = min(begin, (off_t)WRITE_BUFFER * 2L);
               posix_fadvise(fd, begin - headdrop, lastpos - begin + headdrop, POSIX_FADV_DONTNEED);
               }
            begin = lastpos = curpos;
@@ -1608,7 +1608,7 @@ ssize_t cUnbufferedFile::Write(const void *Data, size_t Size)
               // kind of write gathering enabled), but the syncs cause (io) load..
               // Uncomment the next line if you think you need them.
               //fdatasync(fd);
-              off_t headdrop = min(curpos - totwritten, totwritten * 2L);
+              off_t headdrop = min((off_t)(curpos - totwritten), (off_t)totwritten * 2L);
               posix_fadvise(fd, curpos - totwritten - headdrop, totwritten + headdrop, POSIX_FADV_DONTNEED);
               totwritten = 0;
               }

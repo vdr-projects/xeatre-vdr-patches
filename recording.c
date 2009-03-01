@@ -1036,9 +1036,9 @@ void cRecordings::DelByName(const char *FileName)
      }
 }
 
-int cRecordings::TotalFileSizeMB(void)
+int64_t cRecordings::TotalFileSizeMB(void)
 {
-  int size = 0;
+  int64_t size = 0;
   LOCK_THREAD;
   for (cRecording *recording = First(); recording; recording = Next(recording)) {
       if (recording->fileSizeMB > 0 && IsOnVideoDirectoryFileSystem(recording->FileName()))
@@ -1201,10 +1201,17 @@ cIndexFile::cIndexFile(const char *FileName, bool Record)
         if (access(fileName, R_OK) == 0) {
            struct stat buf;
            if (stat(fileName, &buf) == 0) {
+              off_t max_size = (off_t)INT_MAX * sizeof(tIndex);
+              if(sizeof(ssize_t) == sizeof(int32_t))
+                 max_size = 2147483640;
+              if(buf.st_size > max_size) {
+                 esyslog("ERROR: file size (%lld) too large for file '%s'", buf.st_size, fileName);
+                 buf.st_size = max_size;
+                 }
               delta = buf.st_size % sizeof(tIndex);
               if (delta) {
                  delta = sizeof(tIndex) - delta;
-                 esyslog("ERROR: invalid file size (%ld) in '%s'", buf.st_size, fileName);
+                 esyslog("ERROR: invalid file size (%lld) in '%s'", buf.st_size, fileName);
                  }
               last = (buf.st_size + delta) / sizeof(tIndex) - 1;
               if (!Record && last >= 0) {
@@ -1213,7 +1220,7 @@ cIndexFile::cIndexFile(const char *FileName, bool Record)
                  if (index) {
                     f = open(fileName, O_RDONLY);
                     if (f >= 0) {
-                       if ((int)safe_read(f, index, buf.st_size) != buf.st_size) {
+                       if (safe_read(f, index, buf.st_size) != (ssize_t)buf.st_size) {
                           esyslog("ERROR: can't read from file '%s'", fileName);
                           free(index);
                           index = NULL;
@@ -1282,8 +1289,8 @@ bool cIndexFile::CatchUp(int Index)
                   }
                index = (tIndex *)realloc(index, size * sizeof(tIndex));
                if (index) {
-                  int offset = (last + 1) * sizeof(tIndex);
-                  int delta = (newLast - last) * sizeof(tIndex);
+                  off_t offset = ((off_t)last + 1) * sizeof(tIndex);
+                  ssize_t delta = (newLast - last) * sizeof(tIndex);
                   if (lseek(f, offset, SEEK_SET) == offset) {
                      if (safe_read(f, &index[last + 1], delta) != delta) {
                         esyslog("ERROR: can't read from index");
@@ -1312,32 +1319,38 @@ bool cIndexFile::CatchUp(int Index)
   return index != NULL;
 }
 
-bool cIndexFile::Write(uchar PictureType, uchar FileNumber, int FileOffset)
+bool cIndexFile::Write(uchar PictureType, uchar FileNumber, off_t FileOffset)
 {
   if (f >= 0) {
-     tIndex i = { FileOffset, PictureType, FileNumber, 0 };
+     tIndex i = { (uint32_t) FileOffset, PictureType, FileNumber, (uint16_t) (FileOffset>>32) };
      if (safe_write(f, &i, sizeof(i)) < 0) {
         LOG_ERROR_STR(fileName);
         close(f);
         f = -1;
         return false;
         }
-     last++;
+     if(++last < 0) {
+        esyslog("ERROR: index file '%s' grew too large", fileName);
+        close(f);
+        f = -1;
+        last--;
+        return false;
+        } 
      }
   return f >= 0;
 }
 
-bool cIndexFile::Get(int Index, uchar *FileNumber, int *FileOffset, uchar *PictureType, int *Length)
+bool cIndexFile::Get(int Index, uchar *FileNumber, off_t *FileOffset, uchar *PictureType, int *Length)
 {
   if (CatchUp(Index)) {
      if (Index >= 0 && Index < last) {
         *FileNumber = index[Index].number;
-        *FileOffset = index[Index].offset;
+        *FileOffset = (off_t) index[Index].offset_hi << 32 | index[Index].offset_lo;
         if (PictureType)
            *PictureType = index[Index].type;
         if (Length) {
            int fn = index[Index + 1].number;
-           int fo = index[Index + 1].offset;
+           off_t fo = (off_t) index[Index + 1].offset_hi << 32 | index[Index + 1].offset_lo;
            if (fn == *FileNumber)
               *Length = fo - *FileOffset;
            else
@@ -1349,7 +1362,7 @@ bool cIndexFile::Get(int Index, uchar *FileNumber, int *FileOffset, uchar *Pictu
   return false;
 }
 
-int cIndexFile::GetNextIFrame(int Index, bool Forward, uchar *FileNumber, int *FileOffset, int *Length, bool StayOffEnd)
+int cIndexFile::GetNextIFrame(int Index, bool Forward, uchar *FileNumber, off_t *FileOffset, int *Length, bool StayOffEnd)
 {
   if (CatchUp()) {
      int d = Forward ? 1 : -1;
@@ -1361,16 +1374,15 @@ int cIndexFile::GetNextIFrame(int Index, bool Forward, uchar *FileNumber, int *F
                   *FileNumber = index[Index].number;
                else
                   FileNumber = &index[Index].number;
+               off_t cur_fo = (off_t) index[Index].offset_hi << 32 | index[Index].offset_lo;
                if (FileOffset)
-                  *FileOffset = index[Index].offset;
-               else
-                  FileOffset = &index[Index].offset;
+                  *FileOffset = cur_fo;
                if (Length) {
                   // all recordings end with a non-I_FRAME, so the following should be safe:
                   int fn = index[Index + 1].number;
-                  int fo = index[Index + 1].offset;
+                  off_t fo = (off_t) index[Index + 1].offset_hi << 32 | index[Index + 1].offset_lo;
                   if (fn == *FileNumber)
-                     *Length = fo - *FileOffset;
+                     *Length = fo - cur_fo;
                   else {
                      esyslog("ERROR: 'I' frame at end of file #%d", *FileNumber);
                      *Length = -1;
@@ -1386,13 +1398,14 @@ int cIndexFile::GetNextIFrame(int Index, bool Forward, uchar *FileNumber, int *F
   return -1;
 }
 
-int cIndexFile::Get(uchar FileNumber, int FileOffset)
+int cIndexFile::Get(uchar FileNumber, off_t FileOffset)
 {
   if (CatchUp()) {
      //TODO implement binary search!
      int i;
      for (i = 0; i < last; i++) {
-         if (index[i].number > FileNumber || (index[i].number == FileNumber) && index[i].offset >= FileOffset)
+         if (index[i].number > FileNumber || (index[i].number == FileNumber) && 
+             ((off_t) index[i].offset_hi << 32 | index[i].offset_lo) >= FileOffset)
             break;
          }
      return i;
@@ -1467,7 +1480,7 @@ void cFileName::Close(void)
      }
 }
 
-cUnbufferedFile *cFileName::SetOffset(int Number, int Offset)
+cUnbufferedFile *cFileName::SetOffset(int Number, off_t Offset)
 {
   if (fileNumber != Number)
      Close();

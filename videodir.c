@@ -28,7 +28,7 @@ private:
 public:
   cVideoDirectory(void);
   ~cVideoDirectory();
-  int FreeMB(int *UsedMB = NULL);
+  int64_t FreeMB(off_t *UsedMB = NULL);
   const char *Name(void) { return name ? name : VideoDirectory; }
   const char *Stored(void) { return stored; }
   int Length(void) { return length; }
@@ -54,7 +54,7 @@ cVideoDirectory::~cVideoDirectory()
   free(adjusted);
 }
 
-int cVideoDirectory::FreeMB(int *UsedMB)
+int64_t cVideoDirectory::FreeMB(int64_t *UsedMB)
 {
   return FreeDiskSpaceMB(name ? name : VideoDirectory, UsedMB);
 }
@@ -168,7 +168,7 @@ bool RemoveVideoFile(const char *FileName)
   return RemoveFileOrDir(FileName, true);
 }
 
-bool VideoFileSpaceAvailable(int SizeMB)
+bool VideoFileSpaceAvailable(int64_t SizeMB)
 {
   cVideoDirectory Dir;
   if (Dir.IsDistributed()) {
@@ -183,13 +183,13 @@ bool VideoFileSpaceAvailable(int SizeMB)
   return Dir.FreeMB() >= SizeMB;
 }
 
-int VideoDiskSpace(int *FreeMB, int *UsedMB)
+int64_t VideoDiskSpace(int64_t *FreeMB, int64_t *UsedMB)
 {
-  int free = 0, used = 0;
-  int deleted = DeletedRecordings.TotalFileSizeMB();
+  int64_t free = 0, used = 0;
+  int64_t deleted = DeletedRecordings.TotalFileSizeMB();
   cVideoDirectory Dir;
   do {
-     int u;
+     int64_t u;
      free += Dir.FreeMB(&u);
      used += u;
      } while (Dir.Next());

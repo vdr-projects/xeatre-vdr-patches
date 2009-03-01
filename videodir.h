@@ -19,8 +19,8 @@ cUnbufferedFile *OpenVideoFile(const char *FileName, int Flags);
 int CloseVideoFile(cUnbufferedFile *File);
 bool RenameVideoFile(const char *OldName, const char *NewName);
 bool RemoveVideoFile(const char *FileName);
-bool VideoFileSpaceAvailable(int SizeMB);
-int VideoDiskSpace(int *FreeMB = NULL, int *UsedMB = NULL); // returns the used disk space in percent
+bool VideoFileSpaceAvailable(int64_t SizeMB);
+int64_t VideoDiskSpace(int64_t *FreeMB = NULL, int64_t *UsedMB = NULL); // returns the used disk space in percent
 cString PrefixVideoFileName(const char *FileName, char Prefix);
 void RemoveEmptyVideoDirectories(void);
 bool IsOnVideoDirectoryFileSystem(const char *FileName);

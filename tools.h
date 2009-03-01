@@ -195,12 +195,12 @@ bool isnumber(const char *s);
 cString itoa(int n);
 cString AddDirectory(const char *DirName, const char *FileName);
 bool EntriesOnSameFileSystem(const char *File1, const char *File2);
-int FreeDiskSpaceMB(const char *Directory, int *UsedMB = NULL);
+int64_t FreeDiskSpaceMB(const char *Directory, int64_t *UsedMB = NULL);
 bool DirectoryOk(const char *DirName, bool LogErrors = false);
 bool MakeDirs(const char *FileName, bool IsDirectory = false);
 bool RemoveFileOrDir(const char *FileName, bool FollowSymlinks = false);
 bool RemoveEmptyDirectories(const char *DirName, bool RemoveThis = false);
-int DirSizeMB(const char *DirName); ///< returns the total size of the files in the given directory, or -1 in case of an error
+int64_t DirSizeMB(const char *DirName); ///< returns the total size of the files in the given directory, or -1 in case of an error
 char *ReadLink(const char *FileName); ///< returns a new string allocated on the heap, which the caller must delete (or NULL in case of an error)
 bool SpinUpDisk(const char *FileName);
 void TouchFile(const char *FileName);

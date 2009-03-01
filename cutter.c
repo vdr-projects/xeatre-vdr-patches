@@ -69,7 +69,7 @@ void cCuttingThread::Action(void)
      fromFile->SetReadAhead(MEGABYTE(20));
      int Index = Mark->position;
      Mark = fromMarks.Next(Mark);
-     int FileSize = 0;
+     off_t FileSize = 0;
      int CurrentFileNumber = 0;
      int LastIFrame = 0;
      toMarks.Add(0);
@@ -79,7 +79,8 @@ void cCuttingThread::Action(void)
      bool cutIn = true;
      while (Running()) {
            uchar FileNumber;
-           int FileOffset, Length;
+           off_t FileOffset;
+           int Length;
            uchar PictureType;
 
            // Make sure there is enough disk space:
